@@ -2,7 +2,7 @@
 
 factory_girl is a ruby framework for easily defining and creating setup data in tests. factory_girl_java is a java implementation of the same, courtesy Balaji and myself. Like it's parent, it offers simple syntax, striaghtforward definition of factories, saved/unsaved instances with support for associations, support for multiple factories and factory inheritance. Read through for a quick walkthrough.
 
-Defining Factories
+*Defining Factories*
 
 factory_girl lets you define factories for your domain objects. A factory defines a set of values for the instance returned by the factory. Consider the following class.
 
@@ -43,7 +43,7 @@ factory_girl will build dependent objects, if those objects also have a factory 
     Patient patient = newPatient().build();	
     assertEquals(new Time(6, 30), patient.getPreferences().getCallTime());
 
-Associations
+*Associations*
 
 factory_girl can manage associations between your domain objects. A patient always belongs to a clinic and this may be modelled as an association. You can specify this association to factory_girl as follows.
 
@@ -64,7 +64,7 @@ factory_girl can manage associations between your domain objects. A patient alwa
     Patient patient = newPatient().build();	
     assertNotNull(patient.getClinicId());
 
-Persistence
+*Persistence*
 	
 factory_girl can handle persistence for your integration tests; so you can put that out of your concerns while you're writing the test. Simply annotate a factory as @Persistent, and the factory can give you a saved instance of the object.
 
@@ -96,7 +96,7 @@ The builder pattern applies here as well and you can chain any number of setters
 						
 Persistence is decoupled from the core library. So you could define your own @PersistenceHandler for saving objects using a persistence machanism of your choice. We have provided a sample implementation for couchdb as a separate jar. Simply include factory_girl_couchdb.jar in your classpath and factory_girl can save your domain objects in a couchdb database.
 
-Named Factories
+*Named Factories*
 
 You can also define multiple factories for a domain object. This means you can have factories that return specific kinds of instances. For example, you can define this
 
@@ -121,7 +121,7 @@ Eventually, you will build up a collection of valid domain objects that you coul
 
 And see how factory_girl has defined a factory called newMentalPatient(). It uses the name of your factory and prepends it with "new". Until now we have been defining factories without a name. Nameless factory will have a default name which is the name of the domain class itself. Two factories cannot share the same name.
 
-Factory Inheritance
+*Factory Inheritance*
 
 A factory can also inherit from other factories. It's good practice to define a basic factory for each domain class with only the absolutely necessary properties. Then, create more specific factories that inherit from this basic parent. Factory definitions are still code, so keep them DRY.
 
@@ -144,12 +144,6 @@ A factory can also inherit from other factories. It's good practice to define a 
     assertEquals("0123456789", activatedPateint.getMobileNumber());
 
 
-Those are the features for now. We've got some more in the pipeline and will work on them in due time. You can checkout the source code and keep yourself updated at github.
-
-We've also written a demo test class in TAMA under a branch called 'factory_girl_tests'. It's in fact a rewrite of TreatmentAdviceTest. The rewritten test is called NewTreatmentAdviceTest. While containing about half as many lines as the original, we're sure you'll find it much more readable, understandable and ..beautiful!
-
-We've also integrated it with TAMA's build pipeline. Running 'mvn test' will invoke the factory processor and generate any necessary sources before running the tests.
-
-Using it in Intellij is unfortunately not striaght forward. Unlike Eclipse or Netbeans, Intellij lacks edit-time compile; which means you'll see a lot of red in your code until you manually invoke the processor. However, you need to do this only when you add/edit your factory definitions. We've also noticed a few quirks from time to time. Intellij does not like annotation processing very much. We presume it'll work better on Eclipse/Netbeans although we've not tested it there.
+Those are the features for now. We've got some more in the pipeline and will work on them in due time. Using it in Intellij is unfortunately not striaght forward. Unlike Eclipse or Netbeans, Intellij lacks edit-time compile; which means you'll see a lot of red in your code until you manually invoke the processor. However, you need to do this only when you add/edit your factory definitions. We've also noticed a few quirks from time to time. Intellij does not like annotation processing very much. We presume it'll work better on Eclipse/Netbeans although we've not tested it there.
 
 You can download the jar from the attachments. We've packaged all dependencies inside as well as it was the easiest thing to do. You may package your own jar if that is not desirable.
