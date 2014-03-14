@@ -1,0 +1,155 @@
+"Do you want to write beautiful tests, but can't? Do you find yourself writing tests as large as yo momma? Are you frustrated with writing layers of boilerplate code when you know you could be doing some kick ass domain modeling instead?"
+
+factory_girl is a ruby framework for easily defining and creating setup data in tests. factory_girl_java is a java implementation of the same, courtesy Balaji and myself. Like it's parent, it offers simple syntax, striaghtforward definition of factories, saved/unsaved instances with support for associations, support for multiple factories and factory inheritance. Read through for a quick walkthrough.
+
+Defining Factories
+
+factory_girl lets you define factories for your domain objects. A factory defines a set of values for the instance returned by the factory. Consider the following class.
+
+    @Factory(Patient.class)
+    class PatientFactory {
+        public String name() {
+            return "Shrewd Demon";
+        }
+	
+        public String mobileNumber() {
+            return "0123456789";
+        }
+    }
+
+This defines a factory that will return an instance of Patient with name and mobile number set to the values defined. You can obtain the instance by invoking the factory.
+
+    Patient patient = newPatient().build(); 
+    assertEquals("Shrewd Demon", pateint.getName());
+    assertEquals("0123456789", pateint.getMobileNumber());
+	
+factory_girl also generates builder code for your domain class that you can use to furthur construct your object. You do this on an instance obtained from the factory as follows.
+
+    Patient patient = newPatient().setName("Hungry Tigress").build();
+    assertEquals("Hungry Tigress", pateint.getName());
+    assertEquals("0123456789", pateint.getMobileNumber());
+
+You can chain any number of setters from the domain class. factory_girl generates builder code for your domain objects saving you the trouble of writing painful boilerplate code. 
+
+factory_girl will build dependent objects, if those objects also have a factory defined. For example, the patient class might define a preference object for each patient. Then the preference may have its own factory.
+
+    @Factory(Preferences.class)
+    class PreferencesFactory {
+        public Time callTime() {
+            return new Time(6, 30);
+        }
+    }
+
+    Patient patient = newPatient().build();	
+    assertEquals(new Time(6, 30), patient.getPreferences().getCallTime());
+
+Associations
+
+factory_girl can manage associations between your domain objects. A patient always belongs to a clinic and this may be modelled as an association. You can specify this association to factory_girl as follows.
+
+    @Factory(Clinic.class)
+    class ClinicFactory {
+        public String id() {
+            return UUID.random().toString();
+        }
+    }
+	
+    @Factory(Patient.class)
+    class PatientFactory {
+        public clinicId(Clinic clinic) {
+            return clinic.getId();
+        }
+    }
+	
+    Patient patient = newPatient().build();	
+    assertNotNull(patient.getClinicId());
+
+Persistence
+	
+factory_girl can handle persistence for your integration tests; so you can put that out of your concerns while you're writing the test. Simply annotate a factory as @Persistent, and the factory can give you a saved instance of the object.
+
+    @Factory(Clinic.class)
+    @Persistent(databaseName = "medical_records")
+    class ClinicFactory {
+        public String id() {
+            return UUID.random().toString();
+        }
+    }
+	
+    @Factory(Patient.class)
+    @Persistent(databaseName = "medical_records")
+    class PatientFactory {
+        public clinicId(Clinic clinic) {
+            return clinic.getId();
+        }
+    }
+
+You can obtained a saved instance with the following syntax.
+
+    Pateint patient = newPatient().create();
+	
+The builder pattern applies here as well and you can chain any number of setters overriding the default configuration of your object. Note that this will also save a default instance of the associated clinic. If you want to create your own clinic instead, you could do this instead
+
+    Patient patient = newPatient().setClinicId(
+        newClinic().setId("foo").build())
+        .build();
+						
+Persistence is decoupled from the core library. So you could define your own @PersistenceHandler for saving objects using a persistence machanism of your choice. We have provided a sample implementation for couchdb as a separate jar. Simply include factory_girl_couchdb.jar in your classpath and factory_girl can save your domain objects in a couchdb database.
+
+Named Factories
+
+You can also define multiple factories for a domain object. This means you can have factories that return specific kinds of instances. For example, you can define this
+
+    @Factory(Patient.class)
+    class PatientFactory {
+    }
+
+and this
+
+    @Factory(value = Patient.class, name = "MentalPatient")
+    class MentalPatientFactory {
+        public String condition() {
+            "Fregoli delusion";
+        }
+    }
+
+Now, when you want to test some behaviour that involves patients with a psychiatric problem, you can do this
+
+    Patient mentalPatient = newMentalPatient().build();
+	
+Eventually, you will build up a collection of valid domain objects that you could reuse in your tests. 
+
+And see how factory_girl has defined a factory called newMentalPatient(). It uses the name of your factory and prepends it with "new". Until now we have been defining factories without a name. Nameless factory will have a default name which is the name of the domain class itself. Two factories cannot share the same name.
+
+Factory Inheritance
+
+A factory can also inherit from other factories. It's good practice to define a basic factory for each domain class with only the absolutely necessary properties. Then, create more specific factories that inherit from this basic parent. Factory definitions are still code, so keep them DRY.
+
+    @Factory(Patient.class)
+    class PatientFactory {
+        public String mobileNumber() {
+            return "0123456789";
+        }
+    }
+
+    @Factory(value = Patient.class, name = "ActivatedPatient")
+    class ActivatedPatientFactory extends PatientFactory {
+        public String state() {
+            return "active";
+        }
+    }
+
+    Patient activatedPatient = newActivatedPatient().build();	
+    assertTrue(activatedPatient.isActive());
+    assertEquals("0123456789", activatedPateint.getMobileNumber());
+
+
+Those are the features for now. We've got some more in the pipeline and will work on them in due time. You can checkout the source code and keep yourself updated at github.
+
+We've also written a demo test class in TAMA under a branch called 'factory_girl_tests'. It's in fact a rewrite of TreatmentAdviceTest. The rewritten test is called NewTreatmentAdviceTest. While containing about half as many lines as the original, we're sure you'll find it much more readable, understandable and ..beautiful!
+
+We've also integrated it with TAMA's build pipeline. Running 'mvn test' will invoke the factory processor and generate any necessary sources before running the tests.
+
+Using it in Intellij is unfortunately not striaght forward. Unlike Eclipse or Netbeans, Intellij lacks edit-time compile; which means you'll see a lot of red in your code until you manually invoke the processor. However, you need to do this only when you add/edit your factory definitions. We've also noticed a few quirks from time to time. Intellij does not like annotation processing very much. We presume it'll work better on Eclipse/Netbeans although we've not tested it there.
+
+You can download the jar from the attachments. We've packaged all dependencies inside as well as it was the easiest thing to do. You may package your own jar if that is not desirable.
